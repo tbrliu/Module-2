@@ -1,0 +1,131 @@
+---
+title: "Module_2"
+author: "Duohan Zhang"
+date: "10/12/2022"
+output: html_document
+---
+
+```{r}
+dat = read.csv("BodyFat.csv")
+model1 = lm(BODYFAT ~ DENSITY, data = dat)
+model2 = lm(BODYFAT ~ AGE, data = dat)
+model3 = lm(BODYFAT ~ WEIGHT, data = dat)
+model4 = lm(BODYFAT ~ HEIGHT, data = dat)
+model5 = lm(BODYFAT ~ ADIPOSITY, data = dat)
+model6 = lm(BODYFAT ~ NECK, data = dat)
+model7 = lm(BODYFAT ~ CHEST, data = dat)
+model8 = lm(BODYFAT ~ ABDOMEN, data = dat)
+model9 = lm(BODYFAT ~ HIP, data = dat)
+model10 = lm(BODYFAT ~ THIGH, data = dat)
+model11 = lm(BODYFAT ~ KNEE, data = dat)
+model12 = lm(BODYFAT ~ ANKLE, data = dat)
+model13 = lm(BODYFAT ~ BICEPS, data = dat)
+model14 = lm(BODYFAT ~ FOREARM, data = dat)
+model15 = lm(BODYFAT ~ WRIST, data = dat)
+```
+
+```{r}
+rmse = numeric(15)
+rmse[1] = mean((model1$residuals)^2)
+rmse[2] = mean((model2$residuals)^2)
+rmse[3] = mean((model3$residuals)^2)
+rmse[4] = mean((model4$residuals)^2)
+rmse[5] = mean((model5$residuals)^2)
+rmse[6] = mean((model6$residuals)^2)
+rmse[7] = mean((model7$residuals)^2)
+rmse[8] = mean((model8$residuals)^2)
+rmse[9] = mean((model9$residuals)^2)
+rmse[10] = mean((model10$residuals)^2)
+rmse[11] = mean((model11$residuals)^2)
+rmse[12] = mean((model12$residuals)^2)
+rmse[13] = mean((model13$residuals)^2)
+rmse[14] = mean((model14$residuals)^2)
+rmse[15] = mean((model15$residuals)^2)
+rmse
+```
+
+From the above results we see that the first model is the best one in the sense that it has the lowerest Root Mean Square Error.
+
+```{r}
+model = lm(BODYFAT ~ DENSITY, data = dat)
+plot(BODYFAT ~ DENSITY, data = dat)
+coef = model$coefficients
+abline(a = as.numeric(coef[1]), b = as.numeric(coef[2]), col = "red")
+```
+
+Outlier detection
+delete 48th, 76th,96th, 182th(bodyfat = 0) data point
+```{r}
+clean_dat = dat[-c(48,76,96,182),]
+new_model = lm(BODYFAT ~ DENSITY, data = clean_dat)
+plot(BODYFAT ~ DENSITY, data = clean_dat)
+coef = new_model$coefficients
+abline(a = as.numeric(coef[1]), b = as.numeric(coef[2]), col = "red")
+```
+
+Test whether the density is significant
+```{r}
+summary(new_model)
+# calculate standardized residuals
+standard_res = rstandard(new_model)
+```
+
+model diagnostics
+1. check normaility
+```{r}
+qqnorm(standard_res, pch = 20)
+qqline(standard_res, col = "red")
+```
+
+# Checking equality of variance
+```{r}
+plot(new_model$fitted.values,new_model$residuals, xlab = "Fitted Values",ylab = "Residuals")
+```
+
+Both plots show patterns, which indicate that the model needs some improvements.
+
+Use Box-Cox transformation 
+```{r}
+library(MASS)
+bc = boxcox(BODYFAT ~ DENSITY,data = clean_dat)
+lambda = bc$x[which.max(bc$y)]
+lambda
+```
+
+
+```{r}
+y = clean_dat[,2]
+x = clean_dat[,3]
+y_transform = (y^lambda-1)/lambda
+new_model2 = lm(y_transform ~ x)
+plot(y_transform ~ x)
+coef = new_model2$coefficients
+abline(a = as.numeric(coef[1]), b = as.numeric(coef[2]), col = "red")
+#Test whether the density is significant
+summary(new_model)
+```
+
+model diagnostics
+```{r}
+plot(new_model2)
+```
+
+Delete 33th data point
+```{r}
+y = clean_dat[-33,2]
+x = clean_dat[-33,3]
+y_transform = (y^lambda-1)/lambda
+new_model3 = lm(y_transform ~ x)
+plot(y_transform ~ x)
+coef = new_model3$coefficients
+abline(a = as.numeric(coef[1]), b = as.numeric(coef[2]), col = "red")
+#Test whether the density is significant
+summary(new_model)
+```
+
+model diagnostics
+```{r}
+plot(new_model3)
+```
+
+Now the shape disappears!

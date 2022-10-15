@@ -26,39 +26,39 @@ model15 = lm(BODYFAT ~ WRIST, data = dat)
 
 ```{r}
 rmse = numeric(15)
-rmse[1] = mean((model1$residuals)^2)
-rmse[2] = mean((model2$residuals)^2)
-rmse[3] = mean((model3$residuals)^2)
-rmse[4] = mean((model4$residuals)^2)
-rmse[5] = mean((model5$residuals)^2)
-rmse[6] = mean((model6$residuals)^2)
-rmse[7] = mean((model7$residuals)^2)
-rmse[8] = mean((model8$residuals)^2)
-rmse[9] = mean((model9$residuals)^2)
-rmse[10] = mean((model10$residuals)^2)
-rmse[11] = mean((model11$residuals)^2)
-rmse[12] = mean((model12$residuals)^2)
-rmse[13] = mean((model13$residuals)^2)
-rmse[14] = mean((model14$residuals)^2)
-rmse[15] = mean((model15$residuals)^2)
+rmse[1] = sqrt(mean((model1$residuals)^2))
+rmse[2] = sqrt(mean((model2$residuals)^2))
+rmse[3] = sqrt(mean((model3$residuals)^2))
+rmse[4] = sqrt(mean((model4$residuals)^2))
+rmse[5] = sqrt(mean((model5$residuals)^2))
+rmse[6] = sqrt(mean((model6$residuals)^2))
+rmse[7] = sqrt(mean((model7$residuals)^2))
+rmse[8] = sqrt(mean((model8$residuals)^2))
+rmse[9] = sqrt(mean((model9$residuals)^2))
+rmse[10] = sqrt(mean((model10$residuals)^2))
+rmse[11] = sqrt(mean((model11$residuals)^2))
+rmse[12] = sqrt(mean((model12$residuals)^2))
+rmse[13] = sqrt(mean((model13$residuals)^2))
+rmse[14] = sqrt(mean((model14$residuals)^2))
+rmse[15] = sqrt(mean((model15$residuals)^2))
 rmse
 ```
 
-From the above results we see that the first model is the best one in the sense that it has the lowerest Root Mean Square Error.
+From the above results we see that the 8th model is the best one in the sense that it has the lowerest Root Mean Square Error.
 
 ```{r}
-model = lm(BODYFAT ~ DENSITY, data = dat)
-plot(BODYFAT ~ DENSITY, data = dat)
+model = lm(BODYFAT ~ ABDOMEN, data = dat)
+plot(BODYFAT ~ ABDOMEN, data = dat)
 coef = model$coefficients
 abline(a = as.numeric(coef[1]), b = as.numeric(coef[2]), col = "red")
 ```
 
 Outlier detection
-delete 48th, 76th,96th, 182th(bodyfat = 0) data point
+delete 39th, 182th(bodyfat = 0) data point
 ```{r}
-clean_dat = dat[-c(48,76,96,182),]
-new_model = lm(BODYFAT ~ DENSITY, data = clean_dat)
-plot(BODYFAT ~ DENSITY, data = clean_dat)
+clean_dat = dat[-c(39,182),]
+new_model = lm(BODYFAT ~ ABDOMEN, data = clean_dat)
+plot(BODYFAT ~ ABDOMEN, data = clean_dat)
 coef = new_model$coefficients
 abline(a = as.numeric(coef[1]), b = as.numeric(coef[2]), col = "red")
 ```
@@ -82,50 +82,57 @@ qqline(standard_res, col = "red")
 plot(new_model$fitted.values,new_model$residuals, xlab = "Fitted Values",ylab = "Residuals")
 ```
 
-Both plots show patterns, which indicate that the model needs some improvements.
-
-Use Box-Cox transformation 
 ```{r}
-library(MASS)
-bc = boxcox(BODYFAT ~ DENSITY,data = clean_dat)
-lambda = bc$x[which.max(bc$y)]
-lambda
+plot(new_model)
 ```
 
+Delete 204th, 207th data point.
 
 ```{r}
-y = clean_dat[,2]
-x = clean_dat[,3]
-y_transform = (y^lambda-1)/lambda
-new_model2 = lm(y_transform ~ x)
-plot(y_transform ~ x)
+final_dat = clean_dat[-c(207-2,204-2),]
+new_model2 = lm(BODYFAT ~ ABDOMEN, data = final_dat)
+plot(BODYFAT ~ ABDOMEN, data = final_dat)
 coef = new_model2$coefficients
 abline(a = as.numeric(coef[1]), b = as.numeric(coef[2]), col = "red")
-#Test whether the density is significant
-summary(new_model)
+```
+
+```{r}
+summary(new_model2)
+standard_res = rstandard(new_model2)
 ```
 
 model diagnostics
+
+1. check normaility
+```{r}
+qqnorm(standard_res, pch = 20)
+qqline(standard_res, col = "red")
+```
+
+# Checking equality of variance
+```{r}
+plot(new_model2$fitted.values,new_model2$residuals, xlab = "Fitted Values",ylab = "Residuals")
+```
+
 ```{r}
 plot(new_model2)
 ```
 
-Delete 33th data point
 ```{r}
-y = clean_dat[-33,2]
-x = clean_dat[-33,3]
-y_transform = (y^lambda-1)/lambda
-new_model3 = lm(y_transform ~ x)
-plot(y_transform ~ x)
-coef = new_model3$coefficients
-abline(a = as.numeric(coef[1]), b = as.numeric(coef[2]), col = "red")
-#Test whether the density is significant
-summary(new_model)
+coef = new_model$coefficients
+a = as.numeric(coef[1])
+b = as.numeric(coef[2])
+# y = a + b * x
+x_max = round((a-50)/(-b),1)
+x_min = round((a-5)/(-b),1)
+c(x_min, x_max)
 ```
 
-model diagnostics
 ```{r}
-plot(new_model3)
+sigma = summary(new_model2)$sigma
+input = seq(from = x_min, to = x_max, by = 0.1)
+output = round(a + b * input, 1)
+output_min = round(output - 1.64 * sigma,1)
+output_max = round(output + 1.64 * sigma,1)
+final_dataset = data.frame(input, output, output_min, output_max)
 ```
-
-Now the shape disappears!

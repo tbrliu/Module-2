@@ -33,7 +33,13 @@ mission_plot2 <- function(df){
   ggplot(mapping = aes(x=HEIGHT, y=BODYFAT))+
     geom_point(data=df%>%filter(selected),size=3,alpha=1)+
     scale_color_brewer(palette="Set1")+
-    theme(legend.position="right")+labs(x="Weight", y ="Bodyfat")
+    theme(legend.position="right")+labs(x="Height", y ="Bodyfat")
+}
+mission_plot3 <- function(df){
+  ggplot(mapping=aes(x=ABDOMEN,y=BODYFAT))+
+    geom_point(data=df%>%filter(selected),size=3,alpha=1)+
+    scale_color_brewer(palette="set1")+
+    theme(legend.position="right")+labs(x="Abdomen", y ="Bodyfat")
 }
 
 ui<- fluidPage(
@@ -41,6 +47,7 @@ ui<- fluidPage(
  selectInput("age_strata","Select the age",age_strata,multiple = FALSE),
   plotOutput("mission_plot"),
   plotOutput("mission_plot2"),
+ plotOutput("mission_plot3"),
  dataTableOutput("table")
 )
 
@@ -58,6 +65,9 @@ server<-function(input,output){
   })
  output$mission_plot2 <- renderPlot({
    mission_plot2(bodyfat_subset())
+ })
+ output$mission_plot3 <- renderPlot({
+   mission_plot3(bodyfat_subset())
  })
  output$table <- renderDataTable(bodyfat_subset()%>%filter(selected==1)%>%select(selected,BODYFAT,DENSITY,ADIPOSITY))
 }

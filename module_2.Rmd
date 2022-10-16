@@ -7,6 +7,8 @@ output: html_document
 
 ```{r}
 dat = read.csv("BodyFat.csv")
+#delete the abnormal data
+dat = dat[-c(42,172,182),]
 model1 = lm(BODYFAT ~ DENSITY, data = dat)
 model2 = lm(BODYFAT ~ AGE, data = dat)
 model3 = lm(BODYFAT ~ WEIGHT, data = dat)
@@ -44,23 +46,28 @@ rmse[15] = sqrt(mean((model15$residuals)^2))
 rmse
 ```
 
-From the above results we see that the 8th model is the best one in the sense that it has the lowerest Root Mean Square Error.
+From the above results we see that the 8th model is the best one in the sense that it has the lowest Root Mean Square Error.
+
 
 ```{r}
+library(ggplot2)
 model = lm(BODYFAT ~ ABDOMEN, data = dat)
-plot(BODYFAT ~ ABDOMEN, data = dat)
+ggplot(dat, aes(ABDOMEN, BODYFAT)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, col = "red")
 coef = model$coefficients
-abline(a = as.numeric(coef[1]), b = as.numeric(coef[2]), col = "red")
 ```
 
 Outlier detection
-delete 39th, 182th(bodyfat = 0) data point
+delete 39th data point
 ```{r}
-clean_dat = dat[-c(39,182),]
+clean_dat = dat[-c(39),]
 new_model = lm(BODYFAT ~ ABDOMEN, data = clean_dat)
-plot(BODYFAT ~ ABDOMEN, data = clean_dat)
+summary(new_model)
+ggplot(clean_dat, aes(ABDOMEN, BODYFAT)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, col = "red")
 coef = new_model$coefficients
-abline(a = as.numeric(coef[1]), b = as.numeric(coef[2]), col = "red")
 ```
 
 Test whether the density is significant
@@ -79,21 +86,27 @@ qqline(standard_res, col = "red")
 
 # Checking equality of variance
 ```{r}
-plot(new_model$fitted.values,new_model$residuals, xlab = "Fitted Values",ylab = "Residuals")
+ggplot() +
+  geom_point(aes(new_model$fitted.values, new_model$residuals)) +
+  xlab("Fitted Values") + 
+  ylab("Residuals")
+
 ```
 
 ```{r}
 plot(new_model)
 ```
 
-Delete 204th, 207th data point.
+Delete 180th, 204th, 207th data point,since their residues are too large.
 
 ```{r}
-final_dat = clean_dat[-c(207-2,204-2),]
+final_dat = clean_dat[-c(207,204,180),]
 new_model2 = lm(BODYFAT ~ ABDOMEN, data = final_dat)
-plot(BODYFAT ~ ABDOMEN, data = final_dat)
+ggplot(final_dat, aes(ABDOMEN, BODYFAT)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, col = "red")
+
 coef = new_model2$coefficients
-abline(a = as.numeric(coef[1]), b = as.numeric(coef[2]), col = "red")
 ```
 
 ```{r}
@@ -111,28 +124,13 @@ qqline(standard_res, col = "red")
 
 # Checking equality of variance
 ```{r}
-plot(new_model2$fitted.values,new_model2$residuals, xlab = "Fitted Values",ylab = "Residuals")
+ggplot() +
+  geom_point(aes(new_model2$fitted.values, new_model2$residuals)) +
+  xlab("Fitted Values") + 
+  ylab("Residuals")
+
 ```
 
 ```{r}
 plot(new_model2)
-```
-
-```{r}
-coef = new_model$coefficients
-a = as.numeric(coef[1])
-b = as.numeric(coef[2])
-# y = a + b * x
-x_max = round((a-50)/(-b),1)
-x_min = round((a-5)/(-b),1)
-c(x_min, x_max)
-```
-
-```{r}
-sigma = summary(new_model2)$sigma
-input = seq(from = x_min, to = x_max, by = 0.1)
-output = round(a + b * input, 1)
-output_min = round(output - 1.64 * sigma,1)
-output_max = round(output + 1.64 * sigma,1)
-final_dataset = data.frame(input, output, output_min, output_max)
 ```
